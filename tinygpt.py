@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
 from transformer_blocks import TransformerBlock
 
@@ -75,3 +76,13 @@ class TinyGPT(nn.Module):
         logits = self.lm_head(x)
         
         return logits
+
+    def generate(self, idx, max_new_tokens):
+        for _ in range(max_new_tokens):
+            idx_cond = idx[:, -self.max_seq_len:]
+            logits = self(idx_cond)
+            logits = logits[:, -1, :]
+            probs = F.softmax(logits, dim=-1)
+            next_idx = torch.multinomial(probs, 1)
+            idx = torch.cat((idx, next_idx), dim=1)
+        return idx

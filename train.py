@@ -2,31 +2,15 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 import json
 import os
 from tokenizer_utils import get_tokenizer
 from tinygpt import TinyGPT
 
-class TextDataset(Dataset):
-    def __init__(self, data, seq_len):
-        self.data = data
-        self.seq_len = seq_len
-
-    def __len__(self):
-        return max(0, len(self.data) - self.seq_len)
-
-    def __getitem__(self, idx):
-        # x is the input sequence
-        # y is the target sequence, shifted by 1
-        x = self.data[idx:idx + self.seq_len]
-        y = self.data[idx + 1:idx + self.seq_len + 1]
-        return torch.tensor(x, dtype=torch.long), torch.tensor(y, dtype=torch.long)
-
 def train():
     parser = argparse.ArgumentParser(description="Train TinyGPT")
     parser.add_argument('--tokenizer', type=str, choices=['char', 'bpe', 'unigram'], default='bpe')
-    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--epochs', type=int, default=3000)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--seq_len', type=int, default=64)
     parser.add_argument('--lr', type=float, default=1e-3)
@@ -45,9 +29,12 @@ def train():
     print(f"Tokenizing corpus using {args.tokenizer}...")
     encoded_text = tokenizer.encode(text)
     
-    # 2. Prepare dataset and dataloader
-    dataset = TextDataset(encoded_text, args.seq_len)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    # 2. Prepare dataset function (get_batch)
+    def get_batch(batch_size):
+        ix = torch.randint(len(encoded_text) - args.seq_len, (batch_size,))
+        x = torch.stack([torch.tensor(encoded_text[i:i+args.seq_len], dtype=torch.long) for i in ix])
+        y = torch.stack([torch.tensor(encoded_text[i+1:i+args.seq_len+1], dtype=torch.long) for i in ix])
+        return x.to(device), y.to(device)
     
     # 3. Initialize Model
     model = TinyGPT(vocab_size=tokenizer.vocab_size, max_seq_len=args.seq_len)
@@ -60,32 +47,24 @@ def train():
     loss_history = []
     
     print("Starting training...")
-    for epoch in range(args.epochs):
-        model.train()
-        total_loss = 0
+    model.train()
+    for step in range(args.epochs):
+        x, y = get_batch(args.batch_size)
         
-        for batch_idx, (x, y) in enumerate(dataloader):
-            x, y = x.to(device), y.to(device)
-            
-            optimizer.zero_grad()
-            logits = model(x)
-            
-            # Reshape for CrossEntropy: (batch_size * seq_len, vocab_size)
-            logits = logits.view(-1, tokenizer.vocab_size)
-            y = y.view(-1)
-            
-            loss = criterion(logits, y)
-            loss.backward()
-            optimizer.step()
-            
-            total_loss += loss.item()
-            
-            if batch_idx % 50 == 0:
-                print(f"Epoch {epoch+1}/{args.epochs} | Batch {batch_idx}/{len(dataloader)} | Loss: {loss.item():.4f}")
-                
-        avg_loss = total_loss / len(dataloader)
-        loss_history.append(avg_loss)
-        print(f"--- Epoch {epoch+1} Summary | Avg Loss: {avg_loss:.4f} ---")
+        optimizer.zero_grad()
+        logits = model(x)
+        
+        # Reshape for CrossEntropy: (batch_size * seq_len, vocab_size)
+        logits = logits.view(-1, tokenizer.vocab_size)
+        y = y.view(-1)
+        
+        loss = criterion(logits, y)
+        loss.backward()
+        optimizer.step()
+        
+        if step % 50 == 0 or step == args.epochs - 1:
+            print(f"Step {step}/{args.epochs} | Loss: {loss.item():.4f}")
+            loss_history.append(loss.item())
         
     # 5. Save Loss History and Model Checkpoint
     history_file = f"loss_history_{args.tokenizer}.json"
