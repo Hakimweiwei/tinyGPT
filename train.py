@@ -26,7 +26,7 @@ class TextDataset(Dataset):
 def train():
     parser = argparse.ArgumentParser(description="Train TinyGPT")
     parser.add_argument('--tokenizer', type=str, choices=['char', 'bpe', 'unigram'], default='bpe')
-    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--seq_len', type=int, default=64)
     parser.add_argument('--lr', type=float, default=1e-3)

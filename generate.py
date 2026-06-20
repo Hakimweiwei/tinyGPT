@@ -5,7 +5,7 @@ from tokenizer_utils import get_tokenizer
 from tinygpt import TinyGPT
 import os
 
-def generate_text(model, tokenizer, prompt, max_len, temperature, top_k, device):
+def generate_text(model, tokenizer, prompt, max_len, temperature, top_k, repetition_penalty, device):
     model.eval()
     
     # Encode prompt
@@ -26,6 +26,14 @@ def generate_text(model, tokenizer, prompt, max_len, temperature, top_k, device)
             logits = model(input_x)
             # Take the logits for the last token
             next_token_logits = logits[0, -1, :]
+            
+            # Apply repetition penalty
+            if repetition_penalty != 1.0:
+                for token_id in set(x[0].tolist()):
+                    if next_token_logits[token_id] < 0:
+                        next_token_logits[token_id] *= repetition_penalty
+                    else:
+                        next_token_logits[token_id] /= repetition_penalty
             
             # Apply temperature
             next_token_logits = next_token_logits / temperature
@@ -51,11 +59,12 @@ def generate_text(model, tokenizer, prompt, max_len, temperature, top_k, device)
 
 def main():
     parser = argparse.ArgumentParser(description="Generate text using TinyGPT")
-    parser.add_argument('--prompt', type=str, default="strategi sukses menjadi tiktok affiliate adalah")
+    parser.add_argument('--prompt', type=str, default="strategi tiktok affiliate yang sukses sangat")
     parser.add_argument('--tokenizer', type=str, choices=['char', 'bpe', 'unigram'], default='bpe')
     parser.add_argument('--max_len', type=int, default=50)
     parser.add_argument('--temperature', type=float, default=0.8)
     parser.add_argument('--top_k', type=int, default=10)
+    parser.add_argument('--repetition_penalty', type=float, default=1.2)
     parser.add_argument('--seq_len', type=int, default=64)
     args = parser.parse_args()
 
@@ -73,7 +82,7 @@ def main():
     model.load_state_dict(torch.load(checkpoint_file, map_location=device))
     model.to(device)
     
-    generated_text = generate_text(model, tokenizer, args.prompt, args.max_len, args.temperature, args.top_k, device)
+    generated_text = generate_text(model, tokenizer, args.prompt, args.max_len, args.temperature, args.top_k, args.repetition_penalty, device)
     
     print("\n" + "="*50)
     print(generated_text)
