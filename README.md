@@ -1,30 +1,19 @@
-# tinyGPT
+# TinyGPT - Mini Corpus Project
 
-Implementasi model GPT sederhana (TinyGPT) yang dapat dilatih dari awal.
+Proyek ini adalah tugas mata kuliah Pemrosesan Data Multimedia (PDM) yang bertujuan untuk membangun model bahasa (Language Model) berarsitektur dasar Transformer (TinyGPT) dari nol tanpa menggunakan fungsi `nn.Transformer` bawaan.
 
-## Prasyarat
+## Deskripsi Tugas
+1. **Corpus:** Proyek ini menggunakan sebuah *mini corpus* berukuran >2000 kata mengenai "Strategi Tiktok Affiliate" (`corpus.txt`).
+2. **Tokenisasi:** Mendukung 3 pendekatan tokenisasi berbeda menggunakan algoritma `sentencepiece`:
+   - BPE (Byte-Pair Encoding)
+   - Karakter (Char)
+   - Unigram
+3. **Training:** Melatih arsitektur Transformer murni secara lokal untuk menirukan pola teks pada corpus.
+4. **Analisis:** Membandingkan hasil generasi teks dari ketiga model tokenisasi tersebut.
 
-Pastikan Anda memiliki Python yang sudah ter-install di sistem Anda.
-Sangat disarankan untuk menggunakan package manager `uv` agar proses instalasi lebih cepat dan mudah dikelola.
+## Instalasi dan Setup Environment
+Sangat disarankan menjalankan proyek ini di dalam virtual environment. Jika perangkat Anda mendukung GPU NVIDIA, ikuti langkah berikut:
 
-```bash
-pip install uv
-```
-
-## 1. Setup Environment
-
-Proyek ini dapat dijalankan menggunakan CPU maupun GPU (NVIDIA).
-
-### A. Untuk Pengguna CPU
-Jalankan perintah ini di terminal untuk membuat dan mengaktifkan environment:
-```powershell
-uv venv venv
-.\venv\Scripts\activate
-uv pip install -r requirements.txt
-```
-
-### B. Untuk Pengguna GPU (NVIDIA / CUDA)
-Jika Anda memiliki GPU NVIDIA dan ingin mempercepat proses training, buat environment khusus menggunakan Python 3.12 (untuk memastikan kompatibilitas PyTorch CUDA terbaru) lalu install versi GPU:
 ```powershell
 uv venv --python 3.12 venv_gpu
 .\venv_gpu\Scripts\activate
@@ -32,30 +21,19 @@ uv pip install torch --index-url https://download.pytorch.org/whl/cu124
 uv pip install -r requirements.txt
 ```
 
-## 2. Melatih Model (Training)
+## Cara Menjalankan
 
-Sebelum menyuruh model menghasilkan teks, model harus dilatih terlebih dahulu. Pastikan virtual environment pilihan Anda (CPU/GPU) sudah aktif.
-
+### 1. Melatih Model (Training)
+Latih model dengan salah satu tipe *tokenizer*. Model akan otomatis dilatih selama 3000 epoch.
 ```powershell
-python train.py
+python train.py --tokenizer bpe
+python train.py --tokenizer char
+python train.py --tokenizer unigram
 ```
 
-Beberapa argumen opsional yang bisa diatur pada `train.py`:
-- `--epochs`: Jumlah iterasi training (default: 50). Semakin tinggi, model semakin pintar tapi memakan waktu lebih lama.
-- `--batch_size`: Ukuran batch (default: 16).
-- `--tokenizer`: Tipe tokenizer (`char`, `bpe`, atau `unigram`. default: `bpe`).
-
-## 3. Menghasilkan Teks (Generation)
-
-Setelah model selesai dilatih, file checkpoint berekstensi `.pt` (misal: `tinygpt_bpe.pt`) akan otomatis dibuat di folder proyek Anda. Kini Anda bisa mulai menghasilkan teks:
-
+### 2. Generasi Teks (Generation)
+Setelah model selesai dilatih, file `.pt` akan otomatis tersimpan. Kini Anda bisa menguji kemampuannya dalam melanjutkan pola kalimat:
 ```powershell
-python generate.py --prompt "strategi tiktok affiliate yang sukses sangat" --max_len 100
+python generate.py --tokenizer bpe --prompt "strategi tiktok affiliate yang sukses sangat" --max_len 100
 ```
-
-Beberapa argumen opsional untuk `generate.py`:
-- `--prompt`: Teks awalan untuk memicu generate dari model.
-- `--max_len`: Jumlah panjang maksimal karakter/kata yang dihasilkan (default: 50).
-- `--temperature`: Mengatur tingkat "kreativitas" AI. Nilai yang lebih kecil (< 1.0) membuatnya lebih fokus/tertebak, nilai yang lebih besar (> 1.0) membuatnya lebih variatif (default: 0.8).
-- `--repetition_penalty`: Mencegah model mengulang kata yang sama terus-menerus (default: 1.2).
-- `--top_k`: Membatasi jumlah probabilitas kata yang bisa diprediksi untuk menghindari kalimat aneh (default: 10).
+*Catatan: Ubah argumen `--tokenizer` ke `char` atau `unigram` untuk memanggil model yang berbeda dan melihat perbedaan kualitas hasil akhirnya.*
