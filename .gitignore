@@ -1,6 +1,4 @@
 venv/
+venv_gpu/
 __pycache__/
-*.pt
-*.model
-*.vocab
 .DS_Store
