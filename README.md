@@ -50,7 +50,7 @@ Beberapa argumen opsional yang bisa diatur pada `train.py`:
 Setelah model selesai dilatih, file checkpoint berekstensi `.pt` (misal: `tinygpt_bpe.pt`) akan otomatis dibuat di folder proyek Anda. Kini Anda bisa mulai menghasilkan teks:
 
 ```powershell
-python generate.py --prompt "strategi sukses menjadi tiktok affiliate adalah" --max_len 100
+python generate.py --prompt "strategi tiktok affiliate yang sukses sangat" --max_len 100
 ```
 
 Beberapa argumen opsional untuk `generate.py`:
