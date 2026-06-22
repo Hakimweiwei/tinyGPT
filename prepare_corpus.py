@@ -2,7 +2,7 @@ import requests
 import re
 
 def fetch_wikipedia_summary(title):
-    url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles={title}&format=json"
+    url = f""
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
